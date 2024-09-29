@@ -5,28 +5,33 @@ class RedisClient {
 	constructor(){
 		this.client = createClient();
 		this.client.on('error', (error) => {
-			comsole.error(`Redis client error: ${error}`);
+			console.error(`Redis client error: ${error}`);
 		});
 		
 		this.getAsync = promisify(this.client.get).bind(this.client);
-		this.setexAsync = promisify(this.client.setex).bind(this.client);
+		this.setexAsync = promisify(this.client.set).bind(this.client);
 		this.delAsync = promisify(this.client.del).bind(this.client);
+		this.expireAsync = promisify(this.client.expire).bind(this.client);
 	}
 
 	isAlive() {
-		return this.client.connected;
+		if (this.client.connected) {
+			return true;
+		}
+		return false;
 	}
 
 	async get(key) {
-		return this.getAsync(key);
+		return await this.getAsync(key);
 	}
 
-	async set(key, duration, value) {
-		return this.setexAsync(key, duration, value);
+	async set(key, value, duration) {
+		await this.setAsync(key, value);
+		await this.cxpireAsync(key, duration);
 	}
 
 	async del(key) {
-		return this.delAsync(key);
+		await this.delAsync(key);
 	}
 }
 
